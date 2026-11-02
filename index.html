@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>ZUBU — Cloud workspace</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#"><span class="brand-mark">z</span><span>ZUBU</span></a>
+      <div class="side-label">WORKSPACE</div>
+      <button class="nav-item active" data-view="files"><span>▦</span> All files</button>
+      <button class="nav-item" data-view="notes"><span>▤</span> Notes</button>
+      <button class="nav-item" data-view="recent"><span>◷</span> Recent</button>
+      <div class="side-label folders-label">LIBRARY</div>
+      <button class="nav-item" data-filter="Documents"><span>▧</span> Documents</button>
+      <button class="nav-item" data-filter="Images"><span>▧</span> Images</button>
+      <button class="nav-item" data-filter="CAD"><span>▧</span> CAD drawings</button>
+      <button class="nav-item" data-filter="Audio"><span>▧</span> Audio</button>
+      <button class="nav-item" data-filter="Video"><span>▧</span> Video</button>
+      <div class="sidebar-bottom">
+        <div class="connection"><i id="connection-dot"></i><span id="connection-label">Not connected</span></div>
+        <button class="nav-item" id="settings-btn"><span>⚙</span> Setup & settings</button>
+        <button class="nav-item" id="login-btn"><span>⇥</span> Owner sign in</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="mobile-brand"><span class="brand-mark">z</span> ZUBU</div>
+        <div class="search-wrap"><span>⌕</span><input id="search" placeholder="Search files and notes..." autocomplete="off"></div>
+        <div class="top-actions"><button class="icon-btn" id="refresh-btn" title="Refresh">↻</button><button class="avatar" id="account-btn" title="Account">Z</button></div>
+      </header>
+
+      <section class="content">
+        <div class="welcome-row">
+          <div><p class="eyebrow" id="date-label">YOUR PERSONAL CLOUD</p><h1 id="page-title">All files</h1><p class="subheading" id="page-subtitle">A simple home for your digital things.</p></div>
+          <div class="welcome-actions"><button class="btn btn-light" id="new-note-btn">＋ New note</button><label class="btn btn-primary upload-btn">↑ Upload files<input type="file" id="file-input" multiple></label></div>
+        </div>
+
+        <div class="stats">
+          <div class="stat-card"><span class="stat-icon purple">▦</span><div><strong id="stat-files">—</strong><small>Files stored</small></div></div>
+          <div class="stat-card"><span class="stat-icon blue">▤</span><div><strong id="stat-notes">—</strong><small>Notes</small></div></div>
+          <div class="stat-card"><span class="stat-icon green">☁</span><div><strong id="stat-size">—</strong><small>Storage used</small></div></div>
+        </div>
+
+        <div class="section-head"><div><h2 id="list-heading">Your files</h2><p id="list-caption">Everything you have stored in ZUBU.</p></div><select id="sort-select" aria-label="Sort files"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="name">Name A–Z</option><option value="size">Largest first</option></select></div>
+        <div id="notice" class="notice hidden"></div>
+        <div id="file-grid" class="file-grid"><div class="empty-state"><div class="empty-icon">☁</div><h3>Connect your cloud</h3><p>Add your Supabase project details in Setup & settings to start using ZUBU.</p><button class="btn btn-primary" id="setup-cta">Set up ZUBU</button></div></div>
+        <div id="notes-list" class="notes-list hidden"></div>
+        <footer> ZUBU <span>·</span> Your files, in one place.</footer>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="settings-modal">
+    <div class="modal">
+      <button class="modal-close" data-close="settings-modal">×</button>
+      <p class="eyebrow">FIRST-TIME SETUP</p><h2>Connect your cloud</h2>
+      <p class="modal-desc">Paste your Supabase Project URL and anon/public key. These are designed for browser use; never paste a service-role key here.</p>
+      <label>Supabase project URL<input id="supabase-url" placeholder="https://your-project.supabase.co"></label>
+      <label>Supabase anon / publishable key<textarea id="supabase-key" rows="3" placeholder="Paste your public anon key"></textarea></label>
+      <div class="modal-actions"><button class="btn btn-light" data-close="settings-modal">Cancel</button><button class="btn btn-primary" id="save-settings">Connect ZUBU</button></div>
+      <p class="fine-print">Your connection details are saved only in this browser's local storage. Configure the database policies using the included SQL file before connecting.</p>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="auth-modal">
+    <div class="modal small-modal">
+      <button class="modal-close" data-close="auth-modal">×</button>
+      <p class="eyebrow">OWNER ACCESS</p><h2>Sign in to ZUBU</h2>
+      <p class="modal-desc">Only your owner account can upload, edit or delete content.</p>
+      <label>Email<input type="email" id="auth-email" placeholder="you@example.com"></label>
+      <label>Password<input type="password" id="auth-password" placeholder="Your password"></label>
+      <div class="modal-actions"><button class="btn btn-light" id="signout-btn">Sign out</button><button class="btn btn-primary" id="signin-btn">Sign in</button></div>
+      <p class="fine-print">Create your owner account in Supabase Authentication. Keep public sign-ups disabled.</p>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="note-modal">
+    <div class="modal">
+      <button class="modal-close" data-close="note-modal">×</button>
+      <p class="eyebrow">YOUR NOTES</p><h2 id="note-modal-title">New note</h2>
+      <input id="note-id" type="hidden">
+      <label>Title<input id="note-title" maxlength="160" placeholder="Give your note a title"></label>
+      <label>Note<textarea id="note-body" rows="9" placeholder="Write something worth keeping..."></textarea></label>
+      <div class="modal-actions"><button class="btn btn-light" data-close="note-modal">Cancel</button><button class="btn btn-primary" id="save-note">Save note</button></div>
+      <p class="fine-print">Notes are publicly readable on this public workspace. Do not store passwords or private information here.</p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="assets/app.js"></script>
+</body>
+</html>
